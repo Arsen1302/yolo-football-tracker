@@ -1,38 +1,37 @@
-# Ֆուտբոլային խաղերի վերլուծություն
+# Football Match Analysis
 
-Նախագիծը ֆուտբոլային տեսանյութ է մշակում Computer Vision մեթոդներով։ YOLO
-մոդելը հայտնաբերում է խաղացողներին, մրցավարներին և գնդակը, ByteTrack-ը
-հետևում է հայտնաբերումներին, իսկ հաջորդ փուլերը գնահատում են թիմերը,
-գնդակի տիրումն ու խաղացողների շարժումը։ Արդյունքը դիտվում է Streamlit
-ինտերֆեյսում և պահպանվում MP4 ձևաչափով։
+This project analyzes football match videos with computer vision. A YOLO model
+detects players, referees, and the ball. ByteTrack follows detections between
+frames, and later stages estimate teams, possession, and player movement. The
+Streamlit application displays the processed video and saves it as an MP4.
 
-## Հնարավորություններ
+## Features
 
-- Խաղացողների, մրցավարների և գնդակի հայտնաբերում ու track ID-ների պահպանում։
-- Գնդակի թեկնածուների ընտրություն՝ չափի, ձևի, վստահության և դիրքի շարունակականությամբ։
-- Թիմերի մոտավոր տարբերակում՝ համազգեստի գույների K-Means խմբավորմամբ։
-- Տեսախցիկի շարժման գնահատում՝ Lucas–Kanade optical flow-ով։
-- Կոորդինատների հեռանկարային փոխակերպում և արագության/հեռավորության մոտավոր գնահատում։
-- Տեսանյութի վերբեռնում և արդյունքի դիտում Streamlit վեբ հավելվածում։
-- YOLO dataset-ի audit/EDA և train/validation-ով մոդելների համեմատման փորձարկիչ։
+- Detect players, referees, and the ball; track player IDs across frames.
+- Select a ball candidate using its size, shape, confidence, and previous position.
+- Estimate two teams by clustering jersey colors with K-Means.
+- Estimate camera movement using Lucas–Kanade optical flow.
+- Project image coordinates onto a calibrated pitch and estimate player speed and distance.
+- Upload and review processed videos in a Streamlit interface.
+- Audit and explore a YOLO dataset, and run tracked model-training experiments.
 
-Արագությունն ու հեռավորությունը ground truth չափումներ չեն։ Դրանց ճշտությունը
-կախված է տեսանյութից, հայտնաբերումներից և խաղադաշտի չափաբերումից՝
-`view_transformer/`-ում։
+Speed and distance are estimates, not ground-truth measurements. Their accuracy
+depends on the video, detections, and pitch calibration in `view_transformer/`.
 
-## Պահանջներ
+## Requirements
 
 - Python 3.11
-- `requirements.txt`-ի փաթեթները
-- Հավելվածի քաշերը՝ `models/yolo-football-player-detection.pt` ճանապարհին
+- Packages listed in `requirements.txt`
+- Application weights at `models/yolo-football-player-detection.pt`, or a
+  different model path supplied with `FOOTBALL_ANALYSIS_MODEL_PATH`
 
-Մոդելի քաշերը, տեսանյութերը, dataset-ը և ուսուցման արդյունքները Git-ում չեն
-ներառվում։ Հավելվածի համար կարող եք նշել այլ քաշերի ճանապարհ՝
-`FOOTBALL_ANALYSIS_MODEL_PATH` միջավայրի փոփոխականով։
+Model weights, videos, datasets, and training outputs are local assets and are
+not committed to Git. Do not commit private videos, credentials, or other
+sensitive files.
 
-## Տեղային գործարկում
+## Run locally
 
-Նախագծի հիմնական պանակից՝
+From the project root:
 
 ```bash
 python3.11 -m venv .venv
@@ -42,36 +41,36 @@ python -m pip install -r requirements.txt
 streamlit run app.py --server.port 7860
 ```
 
-Բացեք [http://localhost:7860](http://localhost:7860), վերբեռնեք MP4, MOV, AVI
-կամ MKV տեսանյութ և սեղմեք «Վերլուծել տեսանյութը»։ Արդյունքը պահպանվում է
-`output_videos/`-ում։ Երկար տեսանյութերի մշակումը կարող է ժամանակ պահանջել։
-Streamlit-ի մեկ ֆայլի լռելյայն սահմանաչափը 200 MB է։
+Open [http://localhost:7860](http://localhost:7860), upload an MP4, MOV, AVI, or
+MKV video, and select **Analyze video**. The result is saved in `output_videos/`.
+Processing time depends on video length and available hardware. Streamlit's
+default per-file upload limit is 200 MB.
 
-Հավելվածի համար այլ մոդել օգտագործելու օրինակ՝
+To use a different model:
 
 ```bash
 FOOTBALL_ANALYSIS_MODEL_PATH=/path/to/best.pt streamlit run app.py --server.port 7860
 ```
 
-Առանց վեբ ինտերֆեյսի գործարկելու համար օգտագործեք CLI-ն․
+The command-line interface uses the same processing pipeline:
 
 ```bash
 python main.py path/to/match.mp4 --output output_videos/result.mp4 --model /path/to/best.pt
 ```
 
-Մուտքային տեսանյութը, `--output`-ը և `--model`-ը կամընտիր են։ Առանց մուտքային
-ճանապարհի օգտագործվում է
-`input_videos/Screen Recording 2026-09-20 at 16.27.37.mov`-ը, իսկ մոդելի համար՝
-`FOOTBALL_ANALYSIS_MODEL_PATH`-ը կամ նախագծի լռելյայն քաշերի ճանապարհը։
+The video, `--output`, and `--model` arguments are optional. Without a video
+argument, the CLI looks for
+`input_videos/Screen Recording 2026-09-20 at 16.27.37.mov`. Without `--model`,
+it uses `FOOTBALL_ANALYSIS_MODEL_PATH` or the default model path.
 
 ## Dataset
 
-EDA-ի և ուսուցման համար ընտրված է Roboflow-ի
+EDA and training use Roboflow's
 [football-players-detection v1](https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc/dataset/1)
-YOLOv5 export-ը։ Dataset-ի լիցենզիան **CC BY 4.0** է․ օգտագործման կամ
-տարածման ժամանակ նշեք Roboflow-ի աղբյուրը և լիցենզիան։
+YOLOv5 export. The dataset is licensed under **CC BY 4.0**. Credit Roboflow and
+follow the license when using or redistributing the dataset.
 
-Տեղային dataset-ի սպասվող կառուցվածքը՝
+Expected local dataset layout:
 
 ```text
 <dataset-root>/
@@ -81,46 +80,41 @@ YOLOv5 export-ը։ Dataset-ի լիցենզիան **CC BY 4.0** է․ օգտագ�
 └── test/{images,labels}/
 ```
 
-Օրինակ՝
+For example:
 
 ```bash
 export FOOTBALL_DATASET_ROOT="$HOME/Downloads/football-players-detection.v1i.yolov5pytorch"
 ```
 
-Գործիքները ստեղծում են ուղղված Ultralytics YAML՝ փորձերի output պանակում և չեն
-փոփոխում սկզբնական dataset-ի YAML-ը կամ պիտակները։
+The dataset tools create a corrected Ultralytics YAML in the experiment output
+directory. They do not modify the original dataset configuration or labels.
 
-## EDA
+## Exploratory data analysis
 
-Բացեք `notebooks/01_football_dataset_eda.ipynb` VS Code-ի Jupyter միջավայրում
-կամ այլ notebook editor-ում։ Notebook-ը ստուգում է split-երը, բացակայող,
-դատարկ կամ որբ label-երը, անվավեր bbox-երը, դասերի բաշխումը, bbox չափերը,
-նկարագրական engineered հատկանիշներն ու նրանց կորելացիաները։ Այն նաև ցուցադրում
-է պիտակավորված պատկերների օրինակներ։
+Open `notebooks/01_football_dataset_eda.ipynb` in VS Code's Jupyter extension or
+another notebook editor. The notebook audits splits, missing, empty, and orphan
+label files, invalid bounding boxes, class distributions, bounding-box sizes,
+engineered descriptive features, correlations, and labeled image examples.
 
-Dataset-ի նախնական աուդիտի արդյունքը՝
+The dataset audit found:
 
-| Split | Նկարներ | Bounding box-եր |
+| Split | Images | Bounding boxes |
 |---|---:|---:|
 | Train | 612 | 14,583 |
 | Validation | 38 | 905 |
 | Test | 13 | 310 |
-| **Ընդամենը** | **663** | **15,798** |
+| **Total** | **663** | **15,798** |
 
-Dataset-ի աուդիտի ժամանակ label ֆայլերի բացակայություն, դատարկ label-եր կամ
-անվավեր bbox տողեր չեն հայտնաբերվել։ Notebook-ը կրկնարկելիս համեմատեք
-արդյունքները տեղային dataset-ի փաստացի ելքի հետ։
+No missing label files, empty label files, or invalid bounding-box rows were
+found in the audit. The splits are the ones supplied with the dataset. The test
+split contains only 13 images, so its metrics are highly uncertain and should
+not be treated as evidence of broad generalization.
 
-Train/validation/test split-երը վերցված են dataset-ից։ Test-ը ընդամենը 13 նկար
-ունի, հետևաբար դրա չափանիշները շատ անկայուն են և ընդհանրացվող արդյունք չեն։
-Notebook-ի բջիջները կրկնեք ամբողջությամբ՝ տեղային տվյալներից աուդիտն ու
-գծապատկերները ստանալու համար։
+## Training, hyperparameter tuning, and experiment tracking
 
-## Մոդելների ուսուցում, tuning և փորձերի հետագծում
-
-Հրամանն իրականացնում է մոդելների և learning rate-երի grid, բոլոր տարբերակները
-համեմատում է validation mAP50-95-ով, ընտրում լավագույնը, ապա test split-ը
-գնահատում է միայն այդ ընտրված մոդելի համար։
+The training command runs a grid over model sizes and learning rates, compares
+completed runs using validation mAP50-95, selects the best validation run, and
+evaluates the held-out test split once for that selected model:
 
 ```bash
 python -m src.train_models \
@@ -132,44 +126,48 @@ python -m src.train_models \
   --batch 4
 ```
 
-Լռելյայն օգտագործվում է հասանելի սարքը՝ CUDA, Apple MPS կամ CPU։ Կարող եք
-նշել սարքը `--device`-ով և փոխել փորձի պարամետրերը։ Արդյունքները պահվում են
-`outputs/experiments/`-ում, որը Git-ից բացառված է․
+By default, the script uses the available device: CUDA, Apple MPS, or CPU. Set a
+specific device with `--device`. Results are written to `outputs/experiments/`,
+which is excluded from Git:
 
-- `experiment_metrics.csv` — բոլոր run-երի պարամետրերը, վիճակները, սխալներն ու validation արդյունքները,
-- `selected_model.json` — validation չափանիշով ընտրված քաշերը և test արդյունքը,
-- `runs/` — յուրաքանչյուր run-ի լավագույն քաշերը և Ultralytics run տվյալները։
+- `experiment_metrics.csv` records each run's parameters, status, errors, and
+  validation metrics.
+- `selected_model.json` records the validation-selected checkpoint and its test metrics.
+- `runs/` contains Ultralytics run files and checkpoints.
 
-Training-ը կարող է երկար տևել և մեծ հիշողություն/պահեստ օգտագործել։ Հրամանի
-ավարտից հետո ստուգեք CSV-ն և JSON-ը, նախքան արդյունքները ներկայացնելը։
+Training can take a long time and use substantial memory and disk space. Review
+the CSV and JSON outputs after a run.
 
-### Իրական փորձարկման արդյունք (Apple M1, MPS)
+### Recorded experiment results (Apple M1, MPS)
 
-Այս միջավայրում 20 epoch-ով ավարտվել են երկու YOLOv8n learning-rate փորձերը։
-Validation mAP50-95-ով ընտրվել է `lr0=0.01`-ը։ YOLOv8s փորձը դադարել է
-առաջին epoch-ի ընթացքում՝ checkpoint-ը պահելիս պահեստի ազատ տարածքի պակասի
-պատճառով, ուստի ամբողջական ճարտարապետությունների համեմատությունը չի ավարտվել։
+Two YOLOv8n learning-rate runs completed with 20 epochs. The run with
+`lr0=0.01` was selected based on validation mAP50-95. A YOLOv8s run stopped
+during its first epoch because the disk ran out of space while saving a
+checkpoint. The full model-size comparison therefore remains incomplete.
 
-| Մոդել | `lr0` | Validation mAP50 | Validation mAP50-95 | Վիճակ |
+| Model | `lr0` | Validation mAP50 | Validation mAP50-95 | Status |
 |---|---:|---:|---:|---|
-| YOLOv8n | 0.001 | 0.6637 | 0.4272 | Ավարտված |
-| YOLOv8n | 0.01 | 0.6868 | 0.4378 | Ընտրված |
-| YOLOv8s | 0.001 | — | — | Չավարտված՝ սկավառակի տարածքի սխալ |
-| YOLOv8s | 0.01 | — | — | Չի գործարկվել |
+| YOLOv8n | 0.001 | 0.6637 | 0.4272 | Completed |
+| YOLOv8n | 0.01 | 0.6868 | 0.4378 | Selected |
+| YOLOv8s | 0.001 | — | — | Incomplete: disk-space error |
+| YOLOv8s | 0.01 | — | — | Not run |
 
-Ընտրված YOLOv8n մոդելը test split-ում մեկ անգամ տվել է mAP50 **0.7186** և
-mAP50-95 **0.4421** (precision 0.8570, recall 0.6303)։ Այս test արդյունքը
-միայն 13 պատկերից է և խիստ անկայուն է․ այն չի կարելի դիտարկել որպես
-ընդհանրացվող որակի ապացույց։ Ճարտարապետությունների ամբողջական համեմատությունն
-ավարտելուց առաջ համոզվեք, որ համակարգում բավարար պահեստ կա։ Արդյունքները և
-ընտրված քաշերի ճանապարհը պահվում են `outputs/experiments/`-ում։ MPS-ի որոշ
-օպերացիաների համար PyTorch-ը զգուշացրել է, որ դրանք խիստ դետերմինիստիկ չեն,
-ուստի նույն seed-ով կրկնված փորձերի արդյունքները կարող են փոքր-ինչ տարբերվել։
+The selected YOLOv8n model was evaluated once on the test split:
+
+| Precision | Recall | mAP50 | mAP50-95 |
+|---:|---:|---:|---:|
+| 0.8570 | 0.6303 | 0.7186 | 0.4421 |
+
+These test results are based on only 13 images and are highly uncertain. They
+should not be presented as proof of general performance. PyTorch also warned
+that some MPS operations are not fully deterministic, so repeating a run with
+the same seed may produce slightly different results. Check that enough disk
+space is available before completing the model-size comparison.
 
 ## Docker
 
-Համոզվեք, որ հավելվածի քաշերը հասանելի են build-ի ժամանակ՝
-`models/yolo-football-player-detection.pt` ճանապարհին, ապա՝
+Make the application model weights available at
+`models/yolo-football-player-detection.pt` during the build, then run:
 
 ```bash
 docker build -t football-analysis .
@@ -178,20 +176,20 @@ docker run --rm -p 7860:7860 \
   football-analysis
 ```
 
-Կոնտեյները լսում է `PORT` փոփոխականը (կանխադրված՝ 7860)։ Տեղային մուտքային
-տեսանյութերն ու ուսուցման dataset-ը Docker image չեն պատճենվում, իսկ մոդելի
-քաշը պետք է տրամադրվի build-ի կամ deploy-ի ժամանակ։
+The container listens on the `PORT` environment variable (default `7860`).
+Input videos and training datasets are excluded from the Docker build context.
+Provide the model weights during the build or deployment.
 
-## Deploy
+## Deployment
 
-Railway-ում միացրեք GitHub պահոցը կամ օգտագործեք Railway CLI-ն․ կօգտագործվի
-նախագծի `Dockerfile`-ը։ Համոզվեք, որ մոդելի քաշը deploy-ին հասանելի է, և
-ծառայությունը լսում է Railway-ի `PORT` փոփոխականը։ Մեծ մոդելների համար
-օգտագործեք ձեր տեղակայման հարթակի աջակցած մոդելային պահեստավորումը և
-`FOOTBALL_ANALYSIS_MODEL_PATH`-ով նշեք ներբեռնված քաշի ճանապարհը։ Նախ փորձարկեք
-կարճ հոլովակով և հետևեք հիշողության օգտագործմանը։
+Connect the GitHub repository to Railway or deploy with the Railway CLI; the
+project's `Dockerfile` is used. Ensure the model weights are available to the
+service and that the app listens on Railway's `PORT`. For larger models, use a
+model storage option supported by your hosting platform and set
+`FOOTBALL_ANALYSIS_MODEL_PATH` to the downloaded weights. Test with a short
+clip first and monitor memory usage.
 
-## Կառուցվածք
+## Project structure
 
 ```text
 .
@@ -205,7 +203,7 @@ Railway-ում միացրեք GitHub պահոցը կամ օգտագործեք Ra
 │   └── train_models.py
 ├── notebooks/
 │   └── 01_football_dataset_eda.ipynb
-├── data/                         # Dataset-ի տեղադրման ուղեցույց
+├── data/                         # Dataset setup guide
 ├── trackers/
 ├── camera_movement_estimator/
 ├── view_transformer/
@@ -213,28 +211,27 @@ Railway-ում միացրեք GitHub պահոցը կամ օգտագործեք Ra
 ├── team_assigner/
 ├── player_ball_assigner/
 ├── utils/
-└── models/                       # Տեղային YOLO քաշեր, Git-ից դուրս
+└── models/                       # Local YOLO weights; excluded from Git
 ```
 
-Հավելվածի շերտերը բաժանված են հետևյալ կերպ․
+Application layers:
 
-- `app.py` — Streamlit UI, միայն վերբեռնման և արդյունքի ցուցադրման համար։
-- `main.py` — CLI մուտքի կետ։
-- `football_analysis/config.py` — մոդելի և ելքային ֆայլերի ճանապարհների կառավարում։
-- `football_analysis/pipeline.py` — տեսանյութի վերլուծության use-case-ի հերթականություն։
+- `app.py` — Streamlit interface for uploading videos and viewing results.
+- `main.py` — command-line entry point.
+- `football_analysis/config.py` — model and output path configuration.
+- `football_analysis/pipeline.py` — video-analysis workflow.
 - `trackers/`, `team_assigner/`, `camera_movement_estimator/`,
-  `view_transformer/`, `speed_and_distance_estimator/`,
-  `player_ball_assigner/` — առանձնացված վերլուծական բաղադրիչներ։
-- `utils/` — ընդհանուր տեսանյութի և bounding-box օժանդակ ֆունկցիաներ։
-- `src/` և `notebooks/` — training/EDA գործիքներ, որոնք տարանջատված են
-  production inference pipeline-ից։
-- `presentation/football_analysis_presentation_hy_v2.pptx` — նախագծի 8 սլայդանոց
-  հայերեն ներկայացումը՝ խոսելու կարճ հուշումներով։
-- `presentation/build_presentation.py` — ներկայացման վերակառուցման script։
+  `view_transformer/`, `speed_and_distance_estimator/`, and
+  `player_ball_assigner/` — analysis components.
+- `utils/` — shared video and bounding-box helpers.
+- `src/` and `notebooks/` — dataset, EDA, and training tools, separate from the
+  production inference pipeline.
+- `presentation/football_analysis_presentation_hy_v2.pptx` — Armenian
+  presentation deck with speaker notes on each slide.
+- `presentation/build_presentation.py` — presentation build script.
 
-UI-ն ու CLI-ն նույն `football_analysis.process_video` ծառայությունն են
-օգտագործում, ուստի processing տրամաբանությունը կրկնօրինակված չէ։ Կարգավորման
-և pipeline-ի հիմնական վարքը ստուգելու համար գործարկեք՝
+The Streamlit UI and CLI use the same `football_analysis.process_video`
+service. Run the focused application tests with:
 
 ```bash
 python -m unittest discover -s tests -v
