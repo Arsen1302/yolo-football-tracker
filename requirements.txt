@@ -1,0 +1,11 @@
+av
+ipykernel>=6.29,<8
+matplotlib
+numpy==2.2.6
+opencv-python>=4.8,<4.12
+pandas==2.2.3
+PyYAML>=6.0,<7
+scikit-learn
+streamlit>=1.40,<2
+supervision>=0.25.1,<0.28
+ultralytics
