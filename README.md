@@ -1,76 +1,106 @@
 # Football Match Analysis
 
-This project analyzes football match videos with computer vision. A YOLO model
-detects players, referees, and the ball. ByteTrack follows detections between
-frames, and later stages estimate teams, possession, and player movement. The
-Streamlit application displays the processed video and saves it as an MP4.
+Football Match Analysis processes a football video and produces an annotated
+video with detected and tracked players, referees, and the ball. It also
+estimates teams, ball possession, camera movement, player speed, and distance.
+The project provides a Streamlit interface for video uploads and a command-line
+interface (CLI); both use the same processing pipeline.
 
-## Features
+Speed and distance are estimates, not ground-truth measurements. Their
+accuracy depends on detections, video quality, and the pitch calibration in
+`view_transformer/`.
 
-- Detect players, referees, and the ball; track player IDs across frames.
-- Select a ball candidate using its size, shape, confidence, and previous position.
-- Estimate two teams by clustering jersey colors with K-Means.
-- Estimate camera movement using Lucas–Kanade optical flow.
-- Project image coordinates onto a calibrated pitch and estimate player speed and distance.
-- Upload and review processed videos in a Streamlit interface.
-- Audit and explore a YOLO dataset, and run tracked model-training experiments.
+## How the application works
 
-Speed and distance are estimates, not ground-truth measurements. Their accuracy
-depends on the video, detections, and pitch calibration in `view_transformer/`.
+```text
+Input video + YOLO weights
+          │
+          ▼
+Detect objects and track them between frames
+          │
+          ▼
+Estimate player positions, teams, and ball possession
+          │
+          ▼
+Estimate camera movement and map positions onto a pitch
+          │
+          ▼
+Draw annotations and save a processed MP4
+```
 
-## Requirements
+The main analysis code is in `football_analysis/pipeline.py`. It coordinates
+the analysis components in the project; `app.py` and `main.py` are two ways to
+run that same service.
+
+## Requirements and local setup
 
 - Python 3.11
-- Packages listed in `requirements.txt`
-- Application weights at `models/yolo-football-player-detection.pt`, or a
-  different model path supplied with `FOOTBALL_ANALYSIS_MODEL_PATH`
+- A YOLO model weight file. By default, the application looks for
+  `models/yolo-football-player-detection.pt`. Model weights are not included
+  in Git, so provide your own compatible weights or set
+  `FOOTBALL_ANALYSIS_MODEL_PATH`.
+- The packages listed in `requirements.txt`
 
-Model weights, videos, datasets, and training outputs are local assets and are
-not committed to Git. Do not commit private videos, credentials, or other
-sensitive files.
-
-## Run locally
-
-From the project root:
+Create an environment, install the packages, and start the web application
+from the project root:
 
 ```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-streamlit run app.py --server.port 7860
+streamlit run app.py
 ```
 
-Open [http://localhost:7860](http://localhost:7860), upload an MP4, MOV, AVI, or
-MKV video, and select **Analyze video**. The result is saved in `output_videos/`.
-Processing time depends on video length and available hardware. Streamlit's
-default per-file upload limit is 200 MB.
+Open the local URL printed by Streamlit, upload an MP4, MOV, AVI, or MKV file,
+and choose **Analyze video**. The processed video is saved under
+`output_videos/` and displayed in the page. Processing time depends on video
+length and available hardware. Streamlit's default per-file upload limit is
+200 MB.
 
-To use a different model:
+If the model is stored somewhere else, set its path before starting the app:
 
 ```bash
-FOOTBALL_ANALYSIS_MODEL_PATH=/path/to/best.pt streamlit run app.py --server.port 7860
+export FOOTBALL_ANALYSIS_MODEL_PATH="/path/to/best.pt"
+streamlit run app.py
 ```
 
-The command-line interface uses the same processing pipeline:
+The detector uses an image size of 640 by default. To change it, set
+`FOOTBALL_ANALYSIS_IMAGE_SIZE` to a positive integer before starting the app.
+
+### Run a video from the command line
+
+The CLI is useful for scripts or when you do not need the upload interface:
 
 ```bash
-python main.py path/to/match.mp4 --output output_videos/result.mp4 --model /path/to/best.pt
+python main.py path/to/match.mp4 \
+  --output output_videos/result.mp4 \
+  --model /path/to/best.pt
 ```
 
-The video, `--output`, and `--model` arguments are optional. Without a video
-argument, the CLI looks for
-`input_videos/Screen Recording 2026-09-20 at 16.27.37.mov`. Without `--model`,
-it uses `FOOTBALL_ANALYSIS_MODEL_PATH` or the default model path.
+The input video, output path, and model path can be provided independently:
 
-## Dataset
+- `video` is the optional positional input-video path.
+- `--output` is an optional destination for the processed MP4.
+- `--model` is an optional YOLO weights path.
 
-EDA and training use Roboflow's
-[football-players-detection v1](https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc/dataset/1)
-YOLOv5 export. The dataset is licensed under **CC BY 4.0**. Credit Roboflow and
-follow the license when using or redistributing the dataset.
+If `--model` is omitted, the program uses `FOOTBALL_ANALYSIS_MODEL_PATH` or the
+default model path. If `--output` is omitted, a uniquely named MP4 is created
+in `output_videos/`. Pass the input video explicitly; the CLI's fallback
+sample-video path is only useful if that sample exists on your computer.
 
-Expected local dataset layout:
+## Dataset exploration and model training
+
+Dataset exploration and training are separate from the video-analysis
+application. They require a local YOLO dataset; the dataset itself is not
+stored in this repository.
+
+The EDA and training tools were prepared for Roboflow's
+[football-players-detection v1 dataset](https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc/dataset/1),
+provided as a YOLOv5 export and licensed under **CC BY 4.0**. Follow the
+license and credit Roboflow when using or redistributing the dataset.
+
+Expected dataset layout:
 
 ```text
 <dataset-root>/
@@ -80,41 +110,28 @@ Expected local dataset layout:
 └── test/{images,labels}/
 ```
 
-For example:
+Set the path to your local dataset:
 
 ```bash
 export FOOTBALL_DATASET_ROOT="$HOME/Downloads/football-players-detection.v1i.yolov5pytorch"
 ```
 
-The dataset tools create a corrected Ultralytics YAML in the experiment output
-directory. They do not modify the original dataset configuration or labels.
+### Explore and audit the dataset
 
-## Exploratory data analysis
+Open `notebooks/01_football_dataset_eda.ipynb` in VS Code with the Jupyter
+extension or in another notebook editor. It reviews dataset splits, missing or
+orphan labels, invalid bounding boxes, class distribution, box sizes, and
+example images. The notebook uses `src/football_dataset.py` for the dataset
+audit. The tools generate a corrected Ultralytics YAML in the experiment
+output folder; they do not edit the original dataset or its labels.
 
-Open `notebooks/01_football_dataset_eda.ipynb` in VS Code's Jupyter extension or
-another notebook editor. The notebook audits splits, missing, empty, and orphan
-label files, invalid bounding boxes, class distributions, bounding-box sizes,
-engineered descriptive features, correlations, and labeled image examples.
+The recorded audit covered 663 images and 15,798 valid boxes. The test split
+contains only 13 images, so any test metrics from this dataset are highly
+uncertain.
 
-The dataset audit found:
+### Train and compare YOLO models
 
-| Split | Images | Bounding boxes |
-|---|---:|---:|
-| Train | 612 | 14,583 |
-| Validation | 38 | 905 |
-| Test | 13 | 310 |
-| **Total** | **663** | **15,798** |
-
-No missing label files, empty label files, or invalid bounding-box rows were
-found in the audit. The splits are the ones supplied with the dataset. The test
-split contains only 13 images, so its metrics are highly uncertain and should
-not be treated as evidence of broad generalization.
-
-## Training, hyperparameter tuning, and experiment tracking
-
-The training command runs a grid over model sizes and learning rates, compares
-completed runs using validation mAP50-95, selects the best validation run, and
-evaluates the held-out test split once for that selected model:
+Run the experiment script from the project root:
 
 ```bash
 python -m src.train_models \
@@ -126,112 +143,98 @@ python -m src.train_models \
   --batch 4
 ```
 
-By default, the script uses the available device: CUDA, Apple MPS, or CPU. Set a
-specific device with `--device`. Results are written to `outputs/experiments/`,
-which is excluded from Git:
+The script compares completed runs using validation mAP50-95, selects the
+best validation run, and evaluates the selected model on the held-out test
+split. It chooses CUDA, Apple MPS, or CPU when available; use `--device` to
+specify a device. Results are written to `outputs/experiments/`:
 
-- `experiment_metrics.csv` records each run's parameters, status, errors, and
-  validation metrics.
-- `selected_model.json` records the validation-selected checkpoint and its test metrics.
-- `runs/` contains Ultralytics run files and checkpoints.
+- `experiment_metrics.csv` records parameters, status, errors, and metrics
+  for each run.
+- `selected_model.json` records the selected checkpoint and its test results.
+- `runs/` contains training output and model checkpoints.
 
-Training can take a long time and use substantial memory and disk space. Review
-the CSV and JSON outputs after a run.
+Training uses significant time, disk space, and memory. The tested YOLOv8n
+runs completed, but a YOLOv8s run stopped because the disk ran out of space.
+The selected model's reported test metrics were measured on only 13 images and
+should not be treated as evidence of broad generalization.
 
-### Recorded experiment results (Apple M1, MPS)
+## Project files
 
-Two YOLOv8n learning-rate runs completed with 20 epochs. The run with
-`lr0=0.01` was selected based on validation mAP50-95. A YOLOv8s run stopped
-during its first epoch because the disk ran out of space while saving a
-checkpoint. The full model-size comparison therefore remains incomplete.
+### Application entry points and shared service
 
-| Model | `lr0` | Validation mAP50 | Validation mAP50-95 | Status |
-|---|---:|---:|---:|---|
-| YOLOv8n | 0.001 | 0.6637 | 0.4272 | Completed |
-| YOLOv8n | 0.01 | 0.6868 | 0.4378 | Selected |
-| YOLOv8s | 0.001 | — | — | Incomplete: disk-space error |
-| YOLOv8s | 0.01 | — | — | Not run |
+- `app.py` — Streamlit user interface. Accepts a video upload, calls the
+  shared processing service, and displays the resulting MP4.
+- `main.py` — CLI entry point. Parses video, model, and output paths, then
+  calls the same service as the web interface.
+- `football_analysis/__init__.py` — exposes `process_video` as the package's
+  public application function.
+- `football_analysis/config.py` — resolves the model and output paths. It
+  reads `FOOTBALL_ANALYSIS_MODEL_PATH` and creates output directories as
+  needed.
+- `football_analysis/pipeline.py` — coordinates detection, tracking, team
+  assignment, possession estimation, camera-motion correction, pitch
+  transformation, speed/distance estimates, and annotated-video writing.
 
-The selected YOLOv8n model was evaluated once on the test split:
+### Video analysis components
 
-| Precision | Recall | mAP50 | mAP50-95 |
-|---:|---:|---:|---:|
-| 0.8570 | 0.6303 | 0.7186 | 0.4421 |
+- `trackers/tracker.py` — runs YOLO detections, associates objects across
+  frames with ByteTrack, selects ball detections, and prepares track positions
+  and annotations.
+- `team_assigner/team_assigner.py` — assigns players to teams using jersey
+  colors.
+- `player_ball_assigner/player_ball_assigner.py` — estimates which player has
+  possession based on player and ball positions.
+- `camera_movement_estimator/camera_movement_estimator.py` — estimates camera
+  movement between frames and adjusts tracked positions.
+- `view_transformer/view_transformer.py` — maps image positions to the
+  project's calibrated pitch coordinates.
+- `speed_and_distance_estimator/speed_and_distance_estimator.py` — estimates
+  player movement speed and distance from transformed positions and video
+  frame rate.
+- `utils/video_utils.py` — reads video metadata and frames and writes
+  processed video.
+- `utils/bbox_utils.py` — provides bounding-box geometry helpers used by the
+  analysis components.
 
-These test results are based on only 13 images and are highly uncertain. They
-should not be presented as proof of general performance. PyTorch also warned
-that some MPS operations are not fully deterministic, so repeating a run with
-the same seed may produce slightly different results. Check that enough disk
-space is available before completing the model-size comparison.
+### Data, experiments, tests, and presentation
 
-## Docker
-
-Make the application model weights available at
-`models/yolo-football-player-detection.pt` during the build, then run:
-
-```bash
-docker build -t football-analysis .
-docker run --rm -p 7860:7860 \
-  -v "$(pwd)/output_videos:/app/output_videos" \
-  football-analysis
-```
-
-The container listens on the `PORT` environment variable (default `7860`).
-Input videos and training datasets are excluded from the Docker build context.
-Provide the model weights during the build or deployment.
-
-## Deployment
-
-Connect the GitHub repository to Railway or deploy with the Railway CLI; the
-project's `Dockerfile` is used. Ensure the model weights are available to the
-service and that the app listens on Railway's `PORT`. For larger models, use a
-model storage option supported by your hosting platform and set
-`FOOTBALL_ANALYSIS_MODEL_PATH` to the downloaded weights. Test with a short
-clip first and monitor memory usage.
-
-## Project structure
-
-```text
-.
-├── app.py
-├── main.py
-├── football_analysis/
-│   ├── config.py
-│   └── pipeline.py
-├── src/
-│   ├── football_dataset.py
-│   └── train_models.py
-├── notebooks/
-│   └── 01_football_dataset_eda.ipynb
-├── data/                         # Dataset setup guide
-├── trackers/
-├── camera_movement_estimator/
-├── view_transformer/
-├── speed_and_distance_estimator/
-├── team_assigner/
-├── player_ball_assigner/
-├── utils/
-└── models/                       # Local YOLO weights; excluded from Git
-```
-
-Application layers:
-
-- `app.py` — Streamlit interface for uploading videos and viewing results.
-- `main.py` — command-line entry point.
-- `football_analysis/config.py` — model and output path configuration.
-- `football_analysis/pipeline.py` — video-analysis workflow.
-- `trackers/`, `team_assigner/`, `camera_movement_estimator/`,
-  `view_transformer/`, `speed_and_distance_estimator/`, and
-  `player_ball_assigner/` — analysis components.
-- `utils/` — shared video and bounding-box helpers.
-- `src/` and `notebooks/` — dataset, EDA, and training tools, separate from the
-  production inference pipeline.
+- `src/football_dataset.py` — validates the dataset layout, audits YOLO
+  annotations, and creates a training-ready Ultralytics dataset YAML.
+- `src/train_models.py` — runs and tracks model/learning-rate experiments,
+  selects by validation metrics, and evaluates the selected model on the test
+  split.
+- `notebooks/01_football_dataset_eda.ipynb` — interactive dataset exploration
+  and visual analysis.
+- `development_and_analysis/color_assignement.ipynb` — exploratory notebook
+  for player-color/team assignment.
+- `data/README.md` — explains where to keep the dataset and its expected
+  directory layout.
+- `tests/test_application_architecture.py` — unit tests for model/output path
+  configuration and pipeline selection behavior.
 - `presentation/football_analysis_presentation_hy_v2.pptx` — Armenian
-  presentation deck with speaker notes on each slide.
-- `presentation/build_presentation.py` — presentation build script.
+  presentation deck for explaining the project.
+- `presentation/build_presentation.py` — source script used to build the
+  presentation.
 
-The Streamlit UI and CLI use the same `football_analysis.process_video`
-service. Run the focused application tests with:
+### Project configuration and local assets
+
+- `requirements.txt` — Python dependencies for the application and project
+  tools, including the pinned NumPy and pandas versions.
+- `Dockerfile` — describes the Python runtime, system packages, dependencies,
+  and application command for a container image.
+- `.dockerignore` — excludes local environments, caches, datasets, videos,
+  and development-only files from a Docker build context.
+- `.railwayignore` — excludes local-only files from the files sent to Railway.
+- `.gitignore` — keeps local model weights, datasets, videos, outputs,
+  secrets, and generated files out of Git.
+- `models/` — location for local YOLO weights. The weights are intentionally
+  not committed to the repository.
+- `input_videos/` — optional location for local source videos.
+- `output_videos/` — default location for generated processed videos.
+
+## Tests
+
+Run the application architecture tests from the project root:
 
 ```bash
 python -m unittest discover -s tests -v
