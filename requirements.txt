@@ -1,4 +1,5 @@
 av
+huggingface_hub>=0.20,<3
 ipykernel>=6.29,<8
 matplotlib
 numpy==2.2.6
