@@ -253,7 +253,9 @@ football_analysis/
 ├── app.py                          # Streamlit web interface
 ├── main.py                         # CLI entry point
 │
-|
+├──.github      
+|   └── workflows
+|       └── ci.yaml                 #CI/CD configs
 ├── football_analysis/
 │   ├── __init__.py                 # Public API: process_video()
 │   ├── config.py                   # Model & output path resolution
