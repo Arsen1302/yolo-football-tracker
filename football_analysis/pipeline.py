@@ -1,7 +1,7 @@
+from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, TypeAlias
-
+from typing_extensions import TypeAlias,Any
 import numpy as np
 
 from camera_movement_estimator import CameraMovementEstimator
