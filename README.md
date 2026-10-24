@@ -153,68 +153,139 @@ python main.py path/to/match.mp4 \
 
 ---
 
-## 🌍 Deployment
+## 🌍 Run Globally (Deploy to the Internet)
 
-### ☁️ Railway (Recommended — pre-configured)
+The model weights are hosted on Hugging Face Hub at
+[`Arsen006/football-analysis-model`](https://huggingface.co/Arsen006/football-analysis-model)
+and are **downloaded automatically** the first time the app starts — no manual file copying needed.
 
-Your repo already includes a `Dockerfile` and `.railwayignore`.
+---
 
-1. Push to GitHub
-2. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub**
-3. Select your repo — Railway auto-detects the Dockerfile
-4. Set the `FOOTBALL_ANALYSIS_MODEL_PATH` environment variable in Railway's dashboard
-5. Your app gets a public HTTPS URL automatically ✅
+### ☁️ Option 1 — Railway (Recommended · Free tier · Pre-configured)
 
-### 🐳 Docker
+> Your repo already has a `Dockerfile`, `.railwayignore`, and auto-model-download wired in.
+> This is the easiest path to a permanent public URL.
+
+**Step 1 — Push your code to GitHub** *(already done ✅)*
+
+**Step 2 — Create a Railway account**
+
+Go to [railway.app](https://railway.app) and sign up / log in with your **GitHub** account.
+
+**Step 3 — Create a new project**
+
+```
+Dashboard → New Project → Deploy from GitHub repo
+```
+
+Search for **`Arsen1302/yolo-football-tracker`** and click it.
+
+**Step 4 — Railway builds automatically**
+
+Railway detects the `Dockerfile` and starts building. Watch the logs in real time.
+The first build takes ~3–5 minutes (installs Python deps + PyTorch).
+
+**Step 5 — Get your public URL**
+
+```
+Project → Settings → Networking → Generate Domain
+```
+
+You'll get a permanent URL like:
+```
+https://yolo-football-tracker-production.up.railway.app
+```
+
+**Step 6 — Done ✅**
+
+Share that URL with anyone. On the first request, the app will download the YOLO model
+weights (~39 MB) from Hugging Face and cache them for all future requests.
+
+> 💡 Railway free tier gives **$5/month** of compute credit — enough for a Streamlit
+> app with on-demand usage. No credit card required.
+
+---
+
+### 🐳 Option 2 — Docker (Self-hosted / VPS)
+
+Run locally or on any server (AWS, GCP, DigitalOcean, etc.):
 
 ```bash
+# Build the image
 docker build -t football-analysis .
+
+# Run it — model auto-downloads from HF Hub on first start
+docker run -p 8501:8501 football-analysis
+```
+
+Open `http://localhost:8501` (or your server IP).
+
+To persist the downloaded model between restarts:
+
+```bash
 docker run -p 8501:8501 \
-  -e FOOTBALL_ANALYSIS_MODEL_PATH=/app/models/best.pt \
   -v $(pwd)/models:/app/models \
   football-analysis
 ```
 
-### 🌐 Streamlit Community Cloud (Free)
+---
 
-1. Push to a **public** GitHub repository
+### 🌐 Option 3 — Streamlit Community Cloud (Free · Permanent URL)
+
+1. Make sure your repo is **public** on GitHub
 2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app**
-3. Point to `app.py` as the entry point
-4. Add `FOOTBALL_ANALYSIS_MODEL_PATH` as a secret
+3. Select repo: `Arsen1302/yolo-football-tracker`, branch: `main`, file: `app.py`
+4. Click **Deploy**
 
-### 🔗 Quick Public Tunnel (ngrok)
+Your app gets a free URL like `https://arsen1302-yolo-football-tracker.streamlit.app`.
+
+> ℹ️ No environment variables needed — the model downloads automatically from HF Hub.
+
+---
+
+### 🔗 Option 4 — ngrok (Quick public tunnel from your Mac)
+
+No server needed — shares your local machine with the internet instantly:
 
 ```bash
-# Terminal 1
+# Terminal 1 — start the app
+source .venv/bin/activate
 streamlit run app.py
 
-# Terminal 2
+# Terminal 2 — open a public tunnel
 ngrok http 8501
 ```
 
-ngrok prints a public URL like `https://abc123.ngrok.io`.
+ngrok prints a temporary public URL like `https://abc123.ngrok.io`.
+Anyone with that link can use your app while your Mac is running.
+
+Install ngrok: [ngrok.com/download](https://ngrok.com/download) or `brew install ngrok`
+
+---
+
+### 🔑 Environment Variables (all platforms)
+
+| Variable | Default | Description |
+|---|---|---|
+| `FOOTBALL_ANALYSIS_MODEL_PATH` | `models/yolo-football-player-detection.pt` | Custom path to YOLO weights (optional — auto-downloaded if missing) |
+| `FOOTBALL_ANALYSIS_IMAGE_SIZE` | `640` | Detector input image size |
 
 ---
 
 ## 🧠 Model Weights
 
-Model weights are **not** stored in this repository (they are excluded by `.gitignore`).
+Model weights are hosted on **Hugging Face Hub** and downloaded automatically at startup:
 
-The project was trained on Roboflow's  
-[football-players-detection v1](https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc/dataset/1) dataset  
+🔗 [`Arsen006/football-analysis-model`](https://huggingface.co/Arsen006/football-analysis-model)
+
+The model was fine-tuned on Roboflow's
+[football-players-detection v1](https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc/dataset/1) dataset
 — 663 images, 15,798 valid bounding boxes, licensed under **CC BY 4.0**.
 
-Pre-trained YOLOv8 base weights (`yolov8n.pt`, `yolov8s.pt`, `yolov8x.pt`) are included locally for convenience but are not committed to Git.
+> The weights are excluded from Git (`.gitignore`). You never need to copy them manually —
+> the app fetches them from HF Hub on first run and caches them locally.
 
-### Environment Variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `FOOTBALL_ANALYSIS_MODEL_PATH` | `models/yolo-football-player-detection.pt` | Path to YOLO weights |
-| `FOOTBALL_ANALYSIS_IMAGE_SIZE` | `640` | Input image size for the detector |
-| `FOOTBALL_DATASET_ROOT` | — | Path to local YOLO dataset (training only) |
-
----
 
 ## 🗂️ Project Structure
 
