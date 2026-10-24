@@ -130,7 +130,7 @@ export FOOTBALL_ANALYSIS_MODEL_PATH="/path/to/best.pt"
 streamlit run app.py
 ```
 
-Open the URL printed by Streamlit, upload a video (MP4, MOV, AVI, MKV — up to 200 MB), and click **Analyze video**.  
+Open the URL printed by Streamlit([http://localhost:8501/]), upload a video (MP4, MOV, AVI, MKV — up to 200 MB), and click **Analyze video**.  
 The annotated result is saved to `output_videos/` and played back in the browser.
 
 ---
@@ -253,6 +253,7 @@ football_analysis/
 ├── app.py                          # Streamlit web interface
 ├── main.py                         # CLI entry point
 │
+|
 ├── football_analysis/
 │   ├── __init__.py                 # Public API: process_video()
 │   ├── config.py                   # Model & output path resolution
@@ -290,6 +291,7 @@ football_analysis/
 ├── input_videos/                   # Source videos (not in Git)
 ├── output_videos/                  # Processed output videos (not in Git)
 ├── requirements.txt
+├──.dockerignore
 └── Dockerfile
 ```
 
