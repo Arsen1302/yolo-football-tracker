@@ -161,89 +161,48 @@ and are **downloaded automatically** the first time the app starts — no manual
 
 ---
 
-### ☁️ Option 1 — Railway (Recommended · Free tier · Pre-configured)
+### ☁️ Option 1 — Streamlit Community Cloud (Recommended · Free · Permanent URL)
 
-> Your repo already has a `Dockerfile`, `.railwayignore`, and auto-model-download wired in.
-> This is the easiest path to a permanent public URL.
+> The easiest way to get a permanent public link. No server, no credit card, no Docker needed.
 
-**Step 1 — Push your code to GitHub** *(already done ✅)*
+**Step 1 — Make sure your repo is public on GitHub** *(already done ✅)*
 
-**Step 2 — Create a Railway account**
+**Step 2 — Go to Streamlit Cloud**
 
-Go to [railway.app](https://railway.app) and sign up / log in with your **GitHub** account.
+Open [share.streamlit.io](https://share.streamlit.io) and sign in with your **GitHub** account (`Arsen1302`).
 
-**Step 3 — Create a new project**
+**Step 3 — Create a new app**
 
+Click **New app** and fill in:
+
+| Field | Value |
+|---|---|
+| Repository | `Arsen1302/yolo-football-tracker` |
+| Branch | `main` |
+| Main file path | `app.py` |
+
+**Step 4 — Deploy**
+
+Click **Deploy**. Streamlit Cloud will:
+- Install system packages from `packages.txt` (`ffmpeg`, OpenCV deps)
+- Install Python packages from `requirements.txt`
+- Start your app automatically
+
+**Step 5 — Get your public URL ✅**
+
+Your app is live at a permanent URL like:
 ```
-Dashboard → New Project → Deploy from GitHub repo
+https://arsen1302-yolo-football-tracker-app-xxxx.streamlit.app
 ```
 
-Search for **`Arsen1302/yolo-football-tracker`** and click it.
+Share it with anyone. On the first video analysis, the YOLO model weights (~39 MB)
+are downloaded from Hugging Face Hub and cached for all future requests.
 
-**Step 4 — Railway builds automatically**
-
-Railway detects the `Dockerfile` and starts building. Watch the logs in real time.
-The first build takes ~3–5 minutes (installs Python deps + PyTorch).
-
-**Step 5 — Get your public URL**
-
-```
-Project → Settings → Networking → Generate Domain
-```
-
-You'll get a permanent URL like:
-```
-https://yolo-football-tracker-production.up.railway.app
-```
-
-**Step 6 — Done ✅**
-
-Share that URL with anyone. On the first request, the app will download the YOLO model
-weights (~39 MB) from Hugging Face and cache them for all future requests.
-
-> 💡 Railway free tier gives **$5/month** of compute credit — enough for a Streamlit
-> app with on-demand usage. No credit card required.
+> 💡 Streamlit Community Cloud is **completely free** — no credit card, no limits for public repos.
 
 ---
 
-### 🐳 Option 2 — Docker (Self-hosted / VPS)
-
-Run locally or on any server (AWS, GCP, DigitalOcean, etc.):
-
-```bash
-# Build the image
-docker build -t football-analysis .
-
-# Run it — model auto-downloads from HF Hub on first start
-docker run -p 8501:8501 football-analysis
-```
-
-Open `http://localhost:8501` (or your server IP).
-
-To persist the downloaded model between restarts:
-
-```bash
-docker run -p 8501:8501 \
-  -v $(pwd)/models:/app/models \
-  football-analysis
-```
-
----
-
-### 🌐 Option 3 — Streamlit Community Cloud (Free · Permanent URL)
-
-1. Make sure your repo is **public** on GitHub
-2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app**
-3. Select repo: `Arsen1302/yolo-football-tracker`, branch: `main`, file: `app.py`
-4. Click **Deploy**
-
-Your app gets a free URL like `https://arsen1302-yolo-football-tracker.streamlit.app`.
-
-> ℹ️ No environment variables needed — the model downloads automatically from HF Hub.
-
----
-
-### 🔗 Option 4 — ngrok (Quick public tunnel from your Mac)
+### 🔗 Option 2 — ngrok (Quick public tunnel from your Mac)
 
 No server needed — shares your local machine with the internet instantly:
 
@@ -263,7 +222,7 @@ Install ngrok: [ngrok.com/download](https://ngrok.com/download) or `brew install
 
 ---
 
-### 🔑 Environment Variables (all platforms)
+### 🔑 Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
